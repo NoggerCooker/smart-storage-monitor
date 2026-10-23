@@ -95,6 +95,44 @@ The API is routed through the same PHP file and does not require Apache URL rewr
 
 `smartctl` is executed locally by PHP. Device paths are validated before being passed to the command.
 
+### Bedeutung von `type`
+
+Die API kann neben dem Gerätepfad auch den von `smartctl` erkannten Gerätetyp erhalten:
+
+```text
+/index.php?api=device&device=/dev/sda&type=scsi
+```
+
+Das entspricht intern ungefähr diesem Aufruf:
+
+```bash
+smartctl -x -j /dev/sda -d scsi
+```
+
+`type=scsi` bedeutet, dass `smartctl` das Gerät über das SCSI-Protokoll behandeln soll. Der Parameter beschreibt den Zugriffs- beziehungsweise Gerätetyp, nicht das Dateisystem und nicht, ob das Laufwerk gemountet ist.
+
+Ohne `type=scsi` würde `smartctl` versuchen, den Gerätetyp automatisch zu erkennen:
+
+```bash
+smartctl -x -j /dev/sda
+```
+
+Die automatische Erkennung funktioniert häufig, aber nicht zuverlässig bei allen SCSI-/SAS-Laufwerken, RAID-Controllern, USB-SATA-Adaptern, virtuellen Laufwerken und speziellen Storage-Bridges. Deshalb übernimmt die Anwendung den Typ aus der Ausgabe von:
+
+```bash
+smartctl --scan-open
+```
+
+Beispiele für mögliche Typen sind:
+
+```text
+/dev/sda&type=scsi
+/dev/nvme0&type=nvme
+/dev/sdb&type=sat
+```
+
+Der Typ sollte normalerweise nicht manuell geraten werden. Ein falscher Typ kann dazu führen, dass `smartctl` keine oder unpassende SMART-Daten liefert.
+
 ## Supported data
 
 The UI displays fields when the local device exposes them through `smartctl` JSON, including:
