@@ -266,11 +266,19 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
       scsi_environmental_reports: value(d,['scsi_environmental_reports'])
     };
   }
+  function rawAttributeValue(attribute) {
+    var raw=attribute ? attribute.raw : null;
+    if(raw && typeof raw==='object') {
+      if(raw.string !== undefined && raw.string !== '') return raw.string;
+      if(raw.value !== undefined) return raw.value;
+    }
+    return raw;
+  }
   function attributeTableHtml(attrs) {
     var html='<table class="attribute-table">';
     if(Array.isArray(attrs)) {
       html+='<thead><tr><th>ID</th><th>Attribut</th><th>Value</th><th>Worst</th><th>Threshold</th><th>Raw Value</th></tr></thead><tbody>';
-      attrs.forEach(function(a){ html+='<tr><td>'+esc(a.id)+'</td><td>'+esc(a.name)+'</td><td>'+esc(a.value)+'</td><td>'+esc(a.worst)+'</td><td>'+esc(a.thresh !== undefined ? a.thresh : a.threshold)+'</td><td><code>'+esc(a.raw)+'</code></td></tr>'; });
+      attrs.forEach(function(a){ html+='<tr><td>'+esc(a.id)+'</td><td>'+esc(a.name)+'</td><td>'+esc(a.value)+'</td><td>'+esc(a.worst)+'</td><td>'+esc(a.thresh !== undefined ? a.thresh : a.threshold)+'</td><td><code>'+esc(rawAttributeValue(a))+'</code></td></tr>'; });
     } else {
       html+='<thead><tr><th>Parameter</th><th>Wert</th></tr></thead><tbody>';
       Object.keys(attrs || {}).forEach(function(key){
