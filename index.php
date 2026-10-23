@@ -172,7 +172,7 @@ button:hover { border-color:var(--blue); } .status { color:var(--muted); font-si
 .attribute-table tr.metric-good td code, .attribute-table tr.metric-warn td code, .attribute-table tr.metric-bad td code { color:var(--text); }
 .modal-section pre { margin:0; }
 .rows { padding:12px 18px 16px; } .row { display:flex; justify-content:space-between; gap:18px; border-bottom:1px solid #242b33; padding:8px 0; font-size:14px; } .row:last-child{border:0}.label{color:var(--muted)} .value{text-align:right; word-break:break-word}
-.rows .row.metric-good { background:rgba(63,185,80,.18); } .rows .row.metric-warn { background:rgba(210,153,34,.20); } .rows .row.metric-bad { background:rgba(248,81,73,.20); }
+.rows .row.metric-good { background:#17351d; border-bottom-color:#2d6a35; border-radius:4px; padding-left:8px; padding-right:8px; } .rows .row.metric-warn { background:#3a2c0d; border-bottom-color:#765b1b; border-radius:4px; padding-left:8px; padding-right:8px; } .rows .row.metric-bad { background:#4a1717; border-bottom-color:#8f302b; border-radius:4px; padding-left:8px; padding-right:8px; }
 .rows .row.metric-good .label, .rows .row.metric-good .value, .rows .row.metric-warn .label, .rows .row.metric-warn .value, .rows .row.metric-bad .label, .rows .row.metric-bad .value { color:var(--text); }
 .empty, .error { padding:22px; border:1px dashed var(--line); border-radius:10px; color:var(--muted); } .error { color:#ffb4ae; border-color:#6e2b2b; }
 pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; background:#0b0f14; padding:12px; border-radius:6px; }
