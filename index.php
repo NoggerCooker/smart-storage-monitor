@@ -172,6 +172,8 @@ button:hover { border-color:var(--blue); } .status { color:var(--muted); font-si
 .attribute-table tr.metric-good td code, .attribute-table tr.metric-warn td code, .attribute-table tr.metric-bad td code { color:var(--text); }
 .modal-section pre { margin:0; }
 .rows { padding:12px 18px 16px; } .row { display:flex; justify-content:space-between; gap:18px; border-bottom:1px solid #242b33; padding:8px 0; font-size:14px; } .row:last-child{border:0}.label{color:var(--muted)} .value{text-align:right; word-break:break-word}
+.rows .row.metric-good { background:rgba(63,185,80,.18); } .rows .row.metric-warn { background:rgba(210,153,34,.20); } .rows .row.metric-bad { background:rgba(248,81,73,.20); }
+.rows .row.metric-good .label, .rows .row.metric-good .value, .rows .row.metric-warn .label, .rows .row.metric-warn .value, .rows .row.metric-bad .label, .rows .row.metric-bad .value { color:var(--text); }
 .empty, .error { padding:22px; border:1px dashed var(--line); border-radius:10px; color:var(--muted); } .error { color:#ffb4ae; border-color:#6e2b2b; }
 pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; background:#0b0f14; padding:12px; border-radius:6px; }
 @media(max-width:600px){ header,main{padding-left:16px;padding-right:16px;} }
@@ -360,7 +362,7 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
       ['smartctl-Exitcode', result ? result.exit_code : null]
     ];
     var html='<article class="card" tabindex="0" role="button"><div class="card-head"><div><h2>'+esc(device.device)+'</h2><div class="device-path">'+esc(device.type || 'auto')+'</div></div><span class="badge '+cls+'">'+esc(statusText)+'</span></div><div class="rows">';
-    rows.forEach(function(r){ html+='<div class="row"><span class="label">'+esc(r[0])+'</span><span class="value '+metricClass(r[0], r.length > 2 ? r[2] : r[1], d, result)+'">'+esc(r[1])+'</span></div>'; });
+    rows.forEach(function(r){ html+='<div class="row '+metricClass(r[0], r.length > 2 ? r[2] : r[1], d, result)+'"><span class="label">'+esc(r[0])+'</span><span class="value">'+esc(r[1])+'</span></div>'; });
     html+='</div></article>'; return html;
   }
   function showModal(device, result) {
