@@ -144,12 +144,17 @@ The UI displays fields when the local device exposes them through `smartctl` JSO
 - firmware/revision
 - transport/protocol
 - current temperature
-- power-on hours
+- power-on hours and the equivalent duration in days
+- lifetime read/write volume in gigabytes when exposed by the device, for example through the SCSI error counter log
 - non-correctable errors from the SCSI read/write/verify error counters
 - grown defect list for SCSI devices
 - endurance used percentage when supplied by the device
 - `smartctl` exit code
 - complete raw SMART JSON for troubleshooting
+
+Power-on time is shown both as the original value in hours and as a calculated value in days (`hours / 24`, rounded to one decimal place). Lifetime read/write values are shown in GB and preserve the precision supplied by `smartctl`.
+
+Clicking a disk card opens a modal with extended information. The modal contains the available SMART attributes or SCSI-specific health counters and the complete raw JSON response. Cards themselves are no longer expandable; the JSON is only shown in the modal.
 
 SCSI devices can expose different JSON field names than ATA devices. The card therefore uses SCSI-specific fields for vendor, product, revision, defect lists, error counters and endurance data. For temperature, it first checks `temperature.current` and falls back to `scsi_environmental_reports.temperature_1.current`, which covers devices such as `/dev/sde` whose temperature is only reported in the SCSI environmental data.
 
