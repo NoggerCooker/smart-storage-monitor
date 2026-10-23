@@ -217,19 +217,21 @@ main { max-width:1400px; margin:0 auto; padding:24px 32px 50px; }
 .toolbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:18px; }
 button { border:1px solid var(--line); border-radius:7px; color:var(--text); background:#21262d; padding:9px 14px; cursor:pointer; }
 button:hover { border-color:var(--blue); } .status { color:var(--muted); font-size:14px; }
-.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:16px; align-items:stretch; }
 .server-section { margin-bottom:28px; }
+.server-overview { margin-top:24px; }
 .server-heading { display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin:0 0 12px; }
 .server-heading h2 { margin:0; font-size:19px; }
 .server-heading span { color:var(--muted); font-size:13px; }
 .remote-form { display:flex; gap:8px; align-items:center; flex-wrap:wrap; width:100%; }
 .remote-form label { color:var(--muted); font-size:14px; }
 .remote-form input { min-width:150px; border:1px solid var(--line); border-radius:7px; background:#0b0f14; color:var(--text); padding:9px 10px; }
-.card { background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; cursor:pointer; transition:border-color .15s, transform .15s; }
+.card { min-width:0; min-height:620px; display:flex; flex-direction:column; background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; cursor:pointer; transition:border-color .15s, transform .15s; }
 .card:hover { border-color:var(--blue); transform:translateY(-1px); }
 .card:focus { outline:2px solid var(--blue); outline-offset:2px; }
 .card-head { padding:16px 18px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; border-bottom:1px solid var(--line); }
 .card h2 { margin:0 0 4px; font-size:17px; line-height:1.25; font-weight:650; } .device-path { color:var(--muted); font-family:monospace; font-size:13px; margin-top:4px; }
+.server-source { color:var(--blue); font-size:13px; font-weight:700; margin-bottom:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .badge { align-self:flex-start; border-radius:999px; padding:4px 9px; font-size:12px; font-weight:700; white-space:nowrap; }
 .good { color:#b7f0bd; background:#17351d; border:1px solid #2d6a35; } .warn { color:#ffe1a1; background:#3a2c0d; border:1px solid #765b1b; } .bad { color:#ffb4ae; background:#4a1717; border:1px solid #8f302b; } .neutral { color:#c9d1d9; background:#30363d; border:1px solid #59636e; }
 .metric-good { color:#b7f0bd; } .metric-warn { color:#ffe1a1; } .metric-bad { color:#ffb4ae; font-weight:650; }
@@ -249,7 +251,7 @@ button:hover { border-color:var(--blue); } .status { color:var(--muted); font-si
 .attribute-table tr.metric-good td { color:var(--text); background:rgba(63,185,80,.18); } .attribute-table tr.metric-warn td { color:var(--text); background:rgba(210,153,34,.20); } .attribute-table tr.metric-bad td { color:var(--text); background:rgba(248,81,73,.20); font-weight:650; }
 .attribute-table tr.metric-good td code, .attribute-table tr.metric-warn td code, .attribute-table tr.metric-bad td code { color:var(--text); }
 .modal-section pre { margin:0; }
-.rows { padding:12px 18px 16px; } .row { display:flex; justify-content:space-between; gap:18px; border-bottom:1px solid #242b33; padding:8px 0; font-size:14px; } .row:last-child{border:0}.label{color:var(--muted)} .value{text-align:right; word-break:break-word}
+.rows { flex:1; padding:12px 18px 16px; } .row { display:flex; justify-content:space-between; gap:18px; border-bottom:1px solid #242b33; padding:8px 0; font-size:14px; } .row:last-child{border:0}.label{color:var(--muted)} .value{text-align:right; word-break:break-word}
 .rows .row.metric-good { background:#17351d; border-bottom-color:#2d6a35; border-radius:4px; padding-left:8px; padding-right:8px; } .rows .row.metric-warn { background:#3a2c0d; border-bottom-color:#765b1b; border-radius:4px; padding-left:8px; padding-right:8px; } .rows .row.metric-bad { background:#4a1717; border-bottom-color:#8f302b; border-radius:4px; padding-left:8px; padding-right:8px; }
 .rows .row.metric-good .label, .rows .row.metric-good .value, .rows .row.metric-warn .label, .rows .row.metric-warn .value, .rows .row.metric-bad .label, .rows .row.metric-bad .value { color:var(--text); }
 .empty, .error { padding:22px; border:1px dashed var(--line); border-radius:10px; color:var(--muted); } .error { color:#ffb4ae; border-color:#6e2b2b; }
@@ -310,6 +312,11 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
   function formatGigabytes(v) {
     if(v === null || v === undefined || v === '') return null;
     return String(v).replace('.', ',') + ' GB';
+  }
+  function formatDataUnits(v) {
+    if(v === null || v === undefined || v === '') return null;
+    var n=numberValue(v);
+    return n === null ? String(v) : n.toLocaleString('de-DE');
   }
   function enduranceUsed(d) {
     var direct=numberValue(value(d,['scsi_percentage_used_endurance_indicator']));
@@ -415,7 +422,7 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
     html+='</tbody></table>';
     return html;
   }
-  function card(device, result) {
+  function card(device, result, serverName) {
     var d=result && result.data ? result.data : {};
     var passed=value(d,['smart_status','passed']);
     var statusText = passed === true ? 'PASSED' : (passed === false ? 'FAILED' : (result && result.available ? 'ERKANNT' : 'FEHLER'));
@@ -439,13 +446,15 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
       ['Betriebsdauer', formatDays(hours)],
       ['Lifetime gelesen', formatGigabytes(value(errorLog,['read','gigabytes_processed']))],
       ['Lifetime geschrieben', formatGigabytes(value(errorLog,['write','gigabytes_processed']))],
+      ['Data Units Read', formatDataUnits(value(d,['nvme_smart_health_information_log','data_units_read']))],
+      ['Data Units Written', formatDataUnits(value(d,['nvme_smart_health_information_log','data_units_written']))],
       ['Power Cycles', powerCycles(d)],
       ['Nicht korrigierbare Fehler', uncorrected],
       ['Gewachsene Defektliste', grownDefects],
       ['Endurance Used', endurance === null ? null : endurance + ' %', endurance],
       ['smartctl-Exitcode', result ? result.exit_code : null]
     ];
-    var html='<article class="card" tabindex="0" role="button"><div class="card-head"><div><h2>'+esc(device.device)+'</h2><div class="device-path">'+esc(device.type || 'auto')+'</div></div><span class="badge '+cls+'">'+esc(statusText)+'</span></div><div class="rows">';
+    var html='<article class="card" tabindex="0" role="button"><div class="card-head"><div><div class="server-source">'+esc(serverName || 'Unbekannter Server')+'</div><h2>'+esc(device.device)+'</h2><div class="device-path">'+esc(device.type || 'auto')+'</div></div><span class="badge '+cls+'">'+esc(statusText)+'</span></div><div class="rows">';
     rows.forEach(function(r){ html+='<div class="row '+metricClass(r[0], r.length > 2 ? r[2] : r[1], d, result)+'"><span class="label">'+esc(r[0])+'</span><span class="value">'+esc(r[1])+'</span></div>'; });
     html+='</div></article>'; return html;
   }
@@ -474,17 +483,17 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
   function renderDashboard(servers) {
     var entries=[];
     var total=0;
-    content.innerHTML=servers.map(function(server){
+    var cards=[];
+    servers.forEach(function(server){
       total += server.devices.length;
-      var devices=server.devices;
-      var heading='<div class="server-heading"><h2>'+esc(server.name)+'</h2><span>'+esc(server.host+(server.port ? ':'+server.port : ''))+' · '+devices.length+' Laufwerk(e)</span></div>';
-      var cards=devices.map(function(result){
+      server.devices.forEach(function(result){
         var device={device:result.device || 'unbekannt', type:result.type};
         entries.push({device:device,result:result});
-        return card(device,result);
-      }).join('');
-      return '<section class="server-section">'+heading+'<div class="grid">'+(cards || '<div class="empty">Keine Laufwerke gefunden.</div>')+'</div></section>';
-    }).join('');
+        cards.push(card(device,result,server.name+' · '+server.host+(server.port ? ':'+server.port : '')));
+      });
+    });
+    var serverNames=servers.map(function(server){ return server.name; }).join(' · ');
+    content.innerHTML='<section class="server-overview"><div class="server-heading"><h2>Alle Datenträger</h2><span>'+esc(serverNames)+' · '+total+' Laufwerk(e)</span></div><div class="grid">'+(cards.length ? cards.join('') : '<div class="empty">Keine Laufwerke gefunden.</div>')+'</div></section>';
     Array.prototype.forEach.call(content.querySelectorAll('.card'), function(el, i){
       el.addEventListener('click', function(){ showModal(entries[i].device, entries[i].result); });
       el.addEventListener('keydown', function(e){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); showModal(entries[i].device, entries[i].result); } });

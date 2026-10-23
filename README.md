@@ -178,7 +178,11 @@ The V2 dashboard then:
 1. scans the local server
 2. sends the entered address and port to its own PHP backend via a POST request
 3. lets the backend query the remote server's `index_v2.php?api=scan` and device APIs
-4. displays the local and remote disks together, grouped by server
+4. displays the local and remote disks together, in one responsive grid, grouped visually by source server in each card header
+
+Cards use the same minimum height and width. On wide screens they are shown side by side; as the available width decreases, CSS automatically stacks them vertically. Each card header contains the originating server name and address/port so disks from different servers remain distinguishable.
+
+For NVMe devices, V2 displays `nvme_smart_health_information_log.data_units_read` and `data_units_written` directly in the card as locale-formatted counts. These are the SMART/NVMe data-unit counters returned by `smartctl` and are not silently converted to an unrelated unit.
 
 The remote address is validated as an IP address and the port must be between 1 and 65535. The value is not written to `localStorage`, cookies, a database, or a file. It exists only in the browser's current JavaScript memory and disappears when the page is reloaded. Added remote targets are therefore lost after a reload and must be entered again.
 
