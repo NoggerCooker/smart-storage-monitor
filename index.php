@@ -205,7 +205,9 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
   }
   function formatDays(hours) {
     var n=numberValue(hours);
-    return n === null ? null : (n / 24).toFixed(1).replace('.', ',') + ' Tage';
+    if(n === null) return null;
+    var days=n / 24;
+    return days >= 365 ? (days / 365).toFixed(1).replace('.', ',') + ' Jahre' : days.toFixed(1).replace('.', ',') + ' Tage';
   }
   function formatGigabytes(v) {
     if(v === null || v === undefined || v === '') return null;
@@ -239,7 +241,6 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
       ['Firmware', value(d,['scsi_revision']) || value(d,['firmware_version'])],
       ['Schnittstelle', value(d,['device','protocol'])],
       ['Temperatur', temperature === null ? null : temperature + ' °C'],
-      ['Betriebsstunden', hours],
       ['Betriebsdauer', formatDays(hours)],
       ['Lifetime gelesen', formatGigabytes(value(errorLog,['read','gigabytes_processed']))],
       ['Lifetime geschrieben', formatGigabytes(value(errorLog,['write','gigabytes_processed']))],

@@ -144,7 +144,7 @@ The UI displays fields when the local device exposes them through `smartctl` JSO
 - firmware/revision
 - transport/protocol
 - current temperature
-- power-on hours and the equivalent duration in days
+- power-on time as a human-readable duration in days or years
 - lifetime read/write volume in gigabytes when exposed by the device, for example through the SCSI error counter log
 - non-correctable errors from the SCSI read/write/verify error counters
 - grown defect list for SCSI devices
@@ -152,7 +152,7 @@ The UI displays fields when the local device exposes them through `smartctl` JSO
 - `smartctl` exit code
 - complete raw SMART JSON for troubleshooting
 
-Power-on time is shown both as the original value in hours and as a calculated value in days (`hours / 24`, rounded to one decimal place). Lifetime read/write values are shown in GB and preserve the precision supplied by `smartctl`.
+Power-on time is displayed only as a human-readable operating duration. Values below one year are shown in days; from 365 days onward they are shown in years, rounded to one decimal place. The raw hours are not displayed separately in the card. Lifetime read/write values are shown in GB and preserve the precision supplied by `smartctl`.
 
 Clicking a disk card opens a modal with extended information. The modal contains the available SMART attributes or SCSI-specific health counters and the complete raw JSON response. Cards themselves are no longer expandable; the JSON is only shown in the modal.
 
