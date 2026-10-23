@@ -138,14 +138,22 @@ Der Typ sollte normalerweise nicht manuell geraten werden. Ein falscher Typ kann
 The UI displays fields when the local device exposes them through `smartctl` JSON, including:
 
 - SMART overall health status
-- model and device family
+- manufacturer/vendor (`scsi_vendor` for SCSI devices, `model_family` for ATA devices)
+- model/product (`scsi_product` or `scsi_model_name` for SCSI devices)
 - serial number
-- firmware version
+- firmware/revision
 - transport/protocol
 - current temperature
 - power-on hours
+- non-correctable errors from the SCSI read/write/verify error counters
+- grown defect list for SCSI devices
+- endurance used percentage when supplied by the device
 - `smartctl` exit code
 - complete raw SMART JSON for troubleshooting
+
+SCSI devices can expose different JSON field names than ATA devices. The card therefore uses SCSI-specific fields for vendor, product, revision, defect lists, error counters and endurance data. For temperature, it first checks `temperature.current` and falls back to `scsi_environmental_reports.temperature_1.current`, which covers devices such as `/dev/sde` whose temperature is only reported in the SCSI environmental data.
+
+These important values are displayed directly in each disk card; the expandable JSON section is only needed for detailed troubleshooting.
 
 Data availability depends on the disk, controller, RAID configuration, USB adapter, virtual machine, and storage driver. A RAID controller or USB bridge may not expose all SMART information.
 

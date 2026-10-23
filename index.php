@@ -173,20 +173,39 @@ details { margin-top:12px; } summary { cursor:pointer; color:var(--blue); } pre 
   function esc(v) { var d=document.createElement('div'); d.textContent=(v===null||v===undefined?'—':String(v)); return d.innerHTML; }
   function api(path) { return fetch('?api=' + path, {headers:{'Accept':'application/json'}}).then(function(r){ return r.json().then(function(j){ if(!r.ok || j.ok===false) throw new Error(j.error || 'Backend-Fehler'); return j; }); }); }
   function value(obj, keys) { var x=obj; for(var i=0;i<keys.length;i++){ if(!x || typeof x!=='object' || !(keys[i] in x)) return null; x=x[keys[i]]; } return x; }
+  function numberValue(v) { return typeof v === 'number' && isFinite(v) ? v : null; }
+  function sumScsiUncorrectedErrors(d) {
+    var log=value(d,['scsi_error_counter_log']);
+    if(!log || typeof log!=='object') return null;
+    var total=0, found=false;
+    ['read','write','verify'].forEach(function(kind){
+      var n=numberValue(value(log,[kind,'total_uncorrected_errors']));
+      if(n !== null){ total += n; found=true; }
+    });
+    return found ? total : null;
+  }
   function card(device, result) {
     var d=result && result.data ? result.data : {};
     var passed=value(d,['smart_status','passed']);
     var statusText = passed === true ? 'PASSED' : (passed === false ? 'FAILED' : (result && result.available ? 'ERKANNT' : 'FEHLER'));
     var cls = passed === true ? 'good' : (passed === false ? 'bad' : 'neutral');
+    var temperature=value(d,['temperature','current']);
+    if(temperature === null) temperature=value(d,['scsi_environmental_reports','temperature_1','current']);
+    var uncorrected=sumScsiUncorrectedErrors(d);
+    var grownDefects=value(d,['scsi_grown_defect_list']);
+    if(grownDefects && typeof grownDefects==='object') grownDefects=value(grownDefects,['count']);
     var rows=[
-      ['Hersteller', value(d,['model_family']) || value(d,['device','model_family']) || value(d,['model_name'])],
-      ['Modell', value(d,['model_name']) || value(d,['device','name'])],
+      ['Hersteller', value(d,['scsi_vendor']) || value(d,['model_family']) || value(d,['device','model_family'])],
+      ['Modell', value(d,['scsi_product']) || value(d,['scsi_model_name']) || value(d,['model_name']) || value(d,['device','name'])],
       ['Seriennummer', value(d,['serial_number'])],
-      ['Firmware', value(d,['firmware_version'])],
+      ['Firmware', value(d,['scsi_revision']) || value(d,['firmware_version'])],
       ['Schnittstelle', value(d,['device','protocol'])],
-      ['Temperatur', value(d,['temperature','current']) === null ? null : value(d,['temperature','current']) + ' °C'],
+      ['Temperatur', temperature === null ? null : temperature + ' °C'],
       ['Betriebsstunden', value(d,['power_on_time','hours'])],
-      ['SMART-Exitcode', result ? result.exit_code : null]
+      ['Nicht korrigierbare Fehler', uncorrected],
+      ['Gewachsene Defektliste', grownDefects],
+      ['Endurance Used', value(d,['scsi_percentage_used_endurance_indicator']) === null ? null : value(d,['scsi_percentage_used_endurance_indicator']) + ' %'],
+      ['smartctl-Exitcode', result ? result.exit_code : null]
     ];
     var html='<article class="card"><div class="card-head"><div><h2>'+esc(device.device)+'</h2><div class="device-path">'+esc(device.type || 'auto')+'</div></div><span class="badge '+cls+'">'+esc(statusText)+'</span></div><div class="rows">';
     rows.forEach(function(r){ html+='<div class="row"><span class="label">'+esc(r[0])+'</span><span class="value">'+esc(r[1])+'</span></div>'; });
