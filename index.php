@@ -150,6 +150,10 @@ button:hover { border-color:var(--blue); } .status { color:var(--muted); font-si
 .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; cursor:pointer; transition:border-color .15s, transform .15s; }
 .card:hover { border-color:var(--blue); transform:translateY(-1px); }
 .card:focus { outline:2px solid var(--blue); outline-offset:2px; }
+.card-head { padding:16px 18px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; border-bottom:1px solid var(--line); }
+.card h2 { margin:0 0 4px; font-size:17px; line-height:1.25; font-weight:650; } .device-path { color:var(--muted); font-family:monospace; font-size:13px; margin-top:4px; }
+.badge { align-self:flex-start; border-radius:999px; padding:4px 9px; font-size:12px; font-weight:700; white-space:nowrap; }
+.good { color:#b7f0bd; background:#17351d; border:1px solid #2d6a35; } .warn { color:#ffe1a1; background:#3a2c0d; border:1px solid #765b1b; } .bad { color:#ffb4ae; background:#4a1717; border:1px solid #8f302b; } .neutral { color:#c9d1d9; background:#30363d; border:1px solid #59636e; }
 .modal { position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center; padding:24px; background:rgba(0,0,0,.72); }
 .modal.hidden { display:none; }
 .modal-dialog { width:min(1000px,100%); max-height:calc(100vh - 48px); overflow:auto; background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:0 20px 70px rgba(0,0,0,.55); }
@@ -159,6 +163,10 @@ button:hover { border-color:var(--blue); } .status { color:var(--muted); font-si
 .modal-close { font-size:20px; line-height:1; padding:6px 10px; }
 .modal-section { margin-top:18px; } .modal-section:first-child { margin-top:0; }
 .modal-section h3 { margin:0 0 8px; font-size:15px; color:var(--muted); }
+.attribute-table { width:100%; border-collapse:collapse; font-size:13px; }
+.attribute-table th, .attribute-table td { padding:8px 10px; border:1px solid var(--line); text-align:left; vertical-align:top; }
+.attribute-table th { color:var(--muted); background:#11161d; font-weight:600; }
+.attribute-table td code { color:#c9d1d9; font-family:monospace; }
 .modal-section pre { margin:0; }
 .rows { padding:12px 18px 16px; } .row { display:flex; justify-content:space-between; gap:18px; border-bottom:1px solid #242b33; padding:8px 0; font-size:14px; } .row:last-child{border:0}.label{color:var(--muted)} .value{text-align:right; word-break:break-word}
 .empty, .error { padding:22px; border:1px dashed var(--line); border-radius:10px; color:var(--muted); } .error { color:#ffb4ae; border-color:#6e2b2b; }
@@ -222,6 +230,22 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
       scsi_environmental_reports: value(d,['scsi_environmental_reports'])
     };
   }
+  function attributeTableHtml(attrs) {
+    var html='<table class="attribute-table">';
+    if(Array.isArray(attrs)) {
+      html+='<thead><tr><th>ID</th><th>Attribut</th><th>Value</th><th>Worst</th><th>Threshold</th><th>Raw Value</th></tr></thead><tbody>';
+      attrs.forEach(function(a){ html+='<tr><td>'+esc(a.id)+'</td><td>'+esc(a.name)+'</td><td>'+esc(a.value)+'</td><td>'+esc(a.worst)+'</td><td>'+esc(a.thresh !== undefined ? a.thresh : a.threshold)+'</td><td><code>'+esc(a.raw)+'</code></td></tr>'; });
+    } else {
+      html+='<thead><tr><th>Parameter</th><th>Wert</th></tr></thead><tbody>';
+      Object.keys(attrs || {}).forEach(function(key){
+        var val=attrs[key];
+        if(val === null || val === undefined) return;
+        html+='<tr><td><code>'+esc(key)+'</code></td><td><code>'+esc(typeof val === 'object' ? JSON.stringify(val) : val)+'</code></td></tr>';
+      });
+    }
+    html+='</tbody></table>';
+    return html;
+  }
   function card(device, result) {
     var d=result && result.data ? result.data : {};
     var passed=value(d,['smart_status','passed']);
@@ -258,7 +282,7 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
     var attrs=scsiAttributeData(d);
     modalTitle.textContent=device.device;
     modalSubtitle.textContent=(device.type || 'auto')+' · '+(value(d,['scsi_product']) || value(d,['model_name']) || 'Erweiterte SMART-Informationen');
-    modalBody.innerHTML='<div class="modal-section"><h3>SMART-Attribute und ergänzende Gerätewerte</h3><pre>'+esc(JSON.stringify(attrs,null,2))+'</pre></div><div class="modal-section"><h3>Roh-JSON</h3><pre>'+esc(result && result.data ? JSON.stringify(result.data,null,2) : (result && result.raw ? result.raw : 'Keine Daten verfügbar'))+'</pre></div>';
+    modalBody.innerHTML='<div class="modal-section"><h3>SMART-Attribute und ergänzende Gerätewerte</h3>'+attributeTableHtml(attrs)+'</div><div class="modal-section"><h3>Roh-JSON</h3><pre>'+esc(result && result.data ? JSON.stringify(result.data,null,2) : (result && result.raw ? result.raw : 'Keine Daten verfügbar'))+'</pre></div>';
     modal.classList.remove('hidden');
     modalClose.focus();
   }

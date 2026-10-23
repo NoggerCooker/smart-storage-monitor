@@ -154,7 +154,7 @@ The UI displays fields when the local device exposes them through `smartctl` JSO
 
 Power-on time is displayed only as a human-readable operating duration. Values below one year are shown in days; from 365 days onward they are shown in years, rounded to one decimal place. The raw hours are not displayed separately in the card. Lifetime read/write values are shown in GB and preserve the precision supplied by `smartctl`.
 
-Clicking a disk card opens a modal with extended information. The modal contains the available SMART attributes or SCSI-specific health counters and the complete raw JSON response. Cards themselves are no longer expandable; the JSON is only shown in the modal.
+Clicking a disk card opens a modal with extended information. The modal shows SMART attributes in a readable table: ATA attributes use columns for ID, name, value, worst, threshold and raw value; SCSI devices use a parameter/value table for their available health counters. The complete raw JSON response remains available separately below the table. Cards themselves are no longer expandable; the JSON is only shown in the modal. The card title area and the PASSED/FAILED status badge are styled separately so the status remains clearly color-coded.
 
 SCSI devices can expose different JSON field names than ATA devices. The card therefore uses SCSI-specific fields for vendor, product, revision, defect lists, error counters and endurance data. For temperature, it first checks `temperature.current` and falls back to `scsi_environmental_reports.temperature_1.current`, which covers devices such as `/dev/sde` whose temperature is only reported in the SCSI environmental data.
 
