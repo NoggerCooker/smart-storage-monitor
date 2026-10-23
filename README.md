@@ -149,6 +149,7 @@ The UI displays fields when the local device exposes them through `smartctl` JSO
 - non-correctable errors from the SCSI read/write/verify error counters
 - grown defect list for SCSI devices
 - endurance used percentage when supplied by the device
+- power-cycle count from ATA, SCSI or NVMe data when supplied
 - `smartctl` exit code
 - complete raw SMART JSON for troubleshooting
 
@@ -158,7 +159,11 @@ Clicking a disk card opens a modal with extended information. The modal shows SM
 
 SCSI devices can expose different JSON field names than ATA devices. The card therefore uses SCSI-specific fields for vendor, product, revision, defect lists, error counters and endurance data. For temperature, it first checks `temperature.current` and falls back to `scsi_environmental_reports.temperature_1.current`, which covers devices such as `/dev/sde` whose temperature is only reported in the SCSI environmental data.
 
-These important values are displayed directly in each disk card; the expandable JSON section is only needed for detailed troubleshooting.
+Endurance is normalized across device families: SCSI uses `scsi_percentage_used_endurance_indicator`, NVMe uses `nvme_smart_health_information_log.percentage_used`, and ATA/SATA SSDs use SMART attributes such as `Percent_Lifetime_Remain`, `SSD_Life_Left` or `Media_Wearout_Indicator`. Remaining-life values are converted to used percentage.
+
+Power cycles are also normalized across device families. The application checks the ATA top-level `power_cycle_count`, ATA SMART attribute 12 or a matching power-cycle attribute, SCSI `scsi_start_stop_cycle_counter.accumulated_start_stop_cycles`, and NVMe `nvme_smart_health_information_log.power_cycles`.
+
+These important values are displayed directly in each disk card; the modal is used for detailed troubleshooting and the complete raw JSON.
 
 Data availability depends on the disk, controller, RAID configuration, USB adapter, virtual machine, and storage driver. A RAID controller or USB bridge may not expose all SMART information.
 

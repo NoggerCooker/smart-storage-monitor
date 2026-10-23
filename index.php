@@ -221,6 +221,42 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
     if(v === null || v === undefined || v === '') return null;
     return String(v).replace('.', ',') + ' GB';
   }
+  function enduranceUsed(d) {
+    var direct=numberValue(value(d,['scsi_percentage_used_endurance_indicator']));
+    if(direct !== null) return direct;
+    var nvme=numberValue(value(d,['nvme_smart_health_information_log','percentage_used']));
+    if(nvme !== null) return nvme;
+    var table=value(d,['ata_smart_attributes','table']);
+    if(Array.isArray(table)) {
+      for(var i=0;i<table.length;i++) {
+        var name=String(table[i].name || '').toLowerCase();
+        if(name.indexOf('percent_lifetime_remain') >= 0 || name.indexOf('ssd_life_left') >= 0 || name.indexOf('media_wearout') >= 0 || name.indexOf('remaining_life') >= 0) {
+          var remaining=numberValue(table[i].value);
+          if(remaining !== null && remaining >= 0 && remaining <= 100) return 100 - remaining;
+        }
+      }
+    }
+    return null;
+  }
+  function powerCycles(d) {
+    var direct=numberValue(value(d,['power_cycle_count']));
+    if(direct !== null) return direct;
+    var scsi=numberValue(value(d,['scsi_start_stop_cycle_counter','accumulated_start_stop_cycles']));
+    if(scsi !== null) return scsi;
+    var nvme=numberValue(value(d,['nvme_smart_health_information_log','power_cycles']));
+    if(nvme !== null) return nvme;
+    var table=value(d,['ata_smart_attributes','table']);
+    if(Array.isArray(table)) {
+      for(var i=0;i<table.length;i++) {
+        var name=String(table[i].name || '').toLowerCase();
+        if(table[i].id === 12 || name.indexOf('power_cycle') >= 0 || name.indexOf('power cycle') >= 0) {
+          var raw=numberValue(value(table[i],['raw','value']));
+          if(raw !== null) return raw;
+        }
+      }
+    }
+    return null;
+  }
   function scsiAttributeData(d) {
     return value(d,['ata_smart_attributes','table']) || {
       scsi_error_counter_log: value(d,['scsi_error_counter_log']),
@@ -268,9 +304,10 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
       ['Betriebsdauer', formatDays(hours)],
       ['Lifetime gelesen', formatGigabytes(value(errorLog,['read','gigabytes_processed']))],
       ['Lifetime geschrieben', formatGigabytes(value(errorLog,['write','gigabytes_processed']))],
+      ['Power Cycles', powerCycles(d)],
       ['Nicht korrigierbare Fehler', uncorrected],
       ['Gewachsene Defektliste', grownDefects],
-      ['Endurance Used', value(d,['scsi_percentage_used_endurance_indicator']) === null ? null : value(d,['scsi_percentage_used_endurance_indicator']) + ' %'],
+      ['Endurance Used', enduranceUsed(d) === null ? null : enduranceUsed(d) + ' %'],
       ['smartctl-Exitcode', result ? result.exit_code : null]
     ];
     var html='<article class="card" tabindex="0" role="button"><div class="card-head"><div><h2>'+esc(device.device)+'</h2><div class="device-path">'+esc(device.type || 'auto')+'</div></div><span class="badge '+cls+'">'+esc(statusText)+'</span></div><div class="rows">';
