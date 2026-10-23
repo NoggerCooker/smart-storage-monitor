@@ -154,6 +154,7 @@ button:hover { border-color:var(--blue); } .status { color:var(--muted); font-si
 .card h2 { margin:0 0 4px; font-size:17px; line-height:1.25; font-weight:650; } .device-path { color:var(--muted); font-family:monospace; font-size:13px; margin-top:4px; }
 .badge { align-self:flex-start; border-radius:999px; padding:4px 9px; font-size:12px; font-weight:700; white-space:nowrap; }
 .good { color:#b7f0bd; background:#17351d; border:1px solid #2d6a35; } .warn { color:#ffe1a1; background:#3a2c0d; border:1px solid #765b1b; } .bad { color:#ffb4ae; background:#4a1717; border:1px solid #8f302b; } .neutral { color:#c9d1d9; background:#30363d; border:1px solid #59636e; }
+.metric-good { color:#b7f0bd; } .metric-warn { color:#ffe1a1; } .metric-bad { color:#ffb4ae; font-weight:650; }
 .modal { position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center; padding:24px; background:rgba(0,0,0,.72); }
 .modal.hidden { display:none; }
 .modal-dialog { width:min(1000px,100%); max-height:calc(100vh - 48px); overflow:auto; background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:0 20px 70px rgba(0,0,0,.55); }
@@ -167,6 +168,7 @@ button:hover { border-color:var(--blue); } .status { color:var(--muted); font-si
 .attribute-table th, .attribute-table td { padding:8px 10px; border:1px solid var(--line); text-align:left; vertical-align:top; }
 .attribute-table th { color:var(--muted); background:#11161d; font-weight:600; }
 .attribute-table td code { color:#c9d1d9; font-family:monospace; }
+.attribute-table tr.metric-good td { color:#b7f0bd; } .attribute-table tr.metric-warn td { color:#ffe1a1; } .attribute-table tr.metric-bad td { color:#ffb4ae; font-weight:650; }
 .modal-section pre { margin:0; }
 .rows { padding:12px 18px 16px; } .row { display:flex; justify-content:space-between; gap:18px; border-bottom:1px solid #242b33; padding:8px 0; font-size:14px; } .row:last-child{border:0}.label{color:var(--muted)} .value{text-align:right; word-break:break-word}
 .empty, .error { padding:22px; border:1px dashed var(--line); border-radius:10px; color:var(--muted); } .error { color:#ffb4ae; border-color:#6e2b2b; }
@@ -182,7 +184,7 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
 </main>
 <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
   <div class="modal-dialog">
-    <div class="modal-head"><div><h2 id="modal-title">Datenträgerdetails</h2><div id="modal-subtitle" class="device-path"></div></div><button id="modal-close" class="modal-close" type="button" aria-label="Schließen">×</button></div>
+    <div class="modal-head"><div><h2 id="modal-title">Datenträgerdetails</h2><div id="modal-subtitle" class="device-path"></div></div><div><span id="modal-status" class="badge neutral">—</span><button id="modal-close" class="modal-close" type="button" aria-label="Schließen">×</button></div></div>
     <div id="modal-body" class="modal-body"></div>
   </div>
 </div>
@@ -195,6 +197,7 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
   var modal = document.getElementById('modal');
   var modalTitle = document.getElementById('modal-title');
   var modalSubtitle = document.getElementById('modal-subtitle');
+  var modalStatus = document.getElementById('modal-status');
   var modalBody = document.getElementById('modal-body');
   var modalClose = document.getElementById('modal-close');
   function esc(v) { var d=document.createElement('div'); d.textContent=(v===null||v===undefined?'—':String(v)); return d.innerHTML; }
@@ -257,6 +260,20 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
     }
     return null;
   }
+  function metricClass(label, raw, d, result) {
+    var n=numberValue(raw);
+    if(label === 'SMART-Status') return raw === 'PASSED' ? 'metric-good' : (raw === 'FAILED' ? 'metric-bad' : 'metric-warn');
+    if(n === null) return '';
+    if(label === 'Temperatur') {
+      var trip=numberValue(value(d,['temperature','drive_trip']));
+      if(trip !== null && trip > 0) return n >= trip - 5 ? 'metric-bad' : (n >= trip - 15 ? 'metric-warn' : 'metric-good');
+      return n >= 60 ? 'metric-bad' : (n >= 50 ? 'metric-warn' : 'metric-good');
+    }
+    if(label === 'Endurance Used') return n >= 90 ? 'metric-bad' : (n >= 70 ? 'metric-warn' : 'metric-good');
+    if(label === 'Nicht korrigierbare Fehler' || label === 'Gewachsene Defektliste') return n === 0 ? 'metric-good' : (n < 10 ? 'metric-warn' : 'metric-bad');
+    if(label === 'smartctl-Exitcode') return n === 0 ? 'metric-good' : (n === 4 ? 'metric-warn' : 'metric-bad');
+    return '';
+  }
   function scsiAttributeData(d) {
     return value(d,['ata_smart_attributes','table']) || {
       scsi_error_counter_log: value(d,['scsi_error_counter_log']),
@@ -274,17 +291,38 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
     }
     return raw;
   }
-  function attributeTableHtml(attrs) {
+  function attributeClass(attribute, d) {
+    var name=String(attribute && attribute.name || '').toLowerCase();
+    if(attribute && attribute.when_failed) return 'metric-bad';
+    var threshold=numberValue(attribute && (attribute.thresh !== undefined ? attribute.thresh : attribute.threshold));
+    var normalized=numberValue(attribute && attribute.value);
+    if(threshold !== null && threshold > 0 && normalized !== null && normalized <= threshold) return 'metric-bad';
+    if(name.indexOf('percent_lifetime_remain') >= 0 || name.indexOf('ssd_life_left') >= 0 || name.indexOf('media_wearout') >= 0 || name.indexOf('remaining_life') >= 0) return metricClass('Endurance Used', normalized === null ? null : 100 - normalized, d, null);
+    if(name.indexOf('temperature') >= 0) return metricClass('Temperatur', numberValue(value(d,['temperature','current'])), d, null);
+    if(name.indexOf('uncorrect') >= 0 || name.indexOf('pending') >= 0 || name.indexOf('realloc') >= 0 || name.indexOf('defect') >= 0) {
+      var raw=numberValue(value(attribute,['raw','value']));
+      return raw === null ? '' : (raw === 0 ? 'metric-good' : 'metric-warn');
+    }
+    return '';
+  }
+  function scsiAttributeClass(key, val, d) {
+    if(key === 'scsi_grown_defect_list') return metricClass('Gewachsene Defektliste', typeof val === 'object' ? value(val,['count']) : val, d, null);
+    if(key === 'scsi_pending_defects') return metricClass('Nicht korrigierbare Fehler', typeof val === 'object' ? value(val,['count']) : val, d, null);
+    if(key === 'scsi_percentage_used_endurance_indicator') return metricClass('Endurance Used', val, d, null);
+    if(key === 'scsi_environmental_reports') return metricClass('Temperatur', value(val,['temperature_1','current']), d, null);
+    return '';
+  }
+  function attributeTableHtml(attrs, d) {
     var html='<table class="attribute-table">';
     if(Array.isArray(attrs)) {
       html+='<thead><tr><th>ID</th><th>Attribut</th><th>Value</th><th>Worst</th><th>Threshold</th><th>Raw Value</th></tr></thead><tbody>';
-      attrs.forEach(function(a){ html+='<tr><td>'+esc(a.id)+'</td><td>'+esc(a.name)+'</td><td>'+esc(a.value)+'</td><td>'+esc(a.worst)+'</td><td>'+esc(a.thresh !== undefined ? a.thresh : a.threshold)+'</td><td><code>'+esc(rawAttributeValue(a))+'</code></td></tr>'; });
+      attrs.forEach(function(a){ html+='<tr class="'+attributeClass(a,d)+'"><td>'+esc(a.id)+'</td><td>'+esc(a.name)+'</td><td>'+esc(a.value)+'</td><td>'+esc(a.worst)+'</td><td>'+esc(a.thresh !== undefined ? a.thresh : a.threshold)+'</td><td><code>'+esc(rawAttributeValue(a))+'</code></td></tr>'; });
     } else {
       html+='<thead><tr><th>Parameter</th><th>Wert</th></tr></thead><tbody>';
       Object.keys(attrs || {}).forEach(function(key){
         var val=attrs[key];
         if(val === null || val === undefined) return;
-        html+='<tr><td><code>'+esc(key)+'</code></td><td><code>'+esc(typeof val === 'object' ? JSON.stringify(val) : val)+'</code></td></tr>';
+        html+='<tr class="'+scsiAttributeClass(key,val,d)+'"><td><code>'+esc(key)+'</code></td><td><code>'+esc(typeof val === 'object' ? JSON.stringify(val) : val)+'</code></td></tr>';
       });
     }
     html+='</tbody></table>';
@@ -302,24 +340,26 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
     if(grownDefects && typeof grownDefects==='object') grownDefects=value(grownDefects,['count']);
     var hours=value(d,['power_on_time','hours']);
     var errorLog=value(d,['scsi_error_counter_log']);
+    var endurance=enduranceUsed(d);
     var rows=[
+      ['SMART-Status', statusText, statusText],
       ['Hersteller', value(d,['scsi_vendor']) || value(d,['model_family']) || value(d,['device','model_family'])],
       ['Modell', value(d,['scsi_product']) || value(d,['scsi_model_name']) || value(d,['model_name']) || value(d,['device','name'])],
       ['Seriennummer', value(d,['serial_number'])],
       ['Firmware', value(d,['scsi_revision']) || value(d,['firmware_version'])],
       ['Schnittstelle', value(d,['device','protocol'])],
-      ['Temperatur', temperature === null ? null : temperature + ' °C'],
+      ['Temperatur', temperature === null ? null : temperature + ' °C', temperature],
       ['Betriebsdauer', formatDays(hours)],
       ['Lifetime gelesen', formatGigabytes(value(errorLog,['read','gigabytes_processed']))],
       ['Lifetime geschrieben', formatGigabytes(value(errorLog,['write','gigabytes_processed']))],
       ['Power Cycles', powerCycles(d)],
       ['Nicht korrigierbare Fehler', uncorrected],
       ['Gewachsene Defektliste', grownDefects],
-      ['Endurance Used', enduranceUsed(d) === null ? null : enduranceUsed(d) + ' %'],
+      ['Endurance Used', endurance === null ? null : endurance + ' %', endurance],
       ['smartctl-Exitcode', result ? result.exit_code : null]
     ];
     var html='<article class="card" tabindex="0" role="button"><div class="card-head"><div><h2>'+esc(device.device)+'</h2><div class="device-path">'+esc(device.type || 'auto')+'</div></div><span class="badge '+cls+'">'+esc(statusText)+'</span></div><div class="rows">';
-    rows.forEach(function(r){ html+='<div class="row"><span class="label">'+esc(r[0])+'</span><span class="value">'+esc(r[1])+'</span></div>'; });
+    rows.forEach(function(r){ html+='<div class="row"><span class="label">'+esc(r[0])+'</span><span class="value '+metricClass(r[0], r.length > 2 ? r[2] : r[1], d, result)+'">'+esc(r[1])+'</span></div>'; });
     html+='</div></article>'; return html;
   }
   function showModal(device, result) {
@@ -327,7 +367,11 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
     var attrs=scsiAttributeData(d);
     modalTitle.textContent=device.device;
     modalSubtitle.textContent=(device.type || 'auto')+' · '+(value(d,['scsi_product']) || value(d,['model_name']) || 'Erweiterte SMART-Informationen');
-    modalBody.innerHTML='<div class="modal-section"><h3>SMART-Attribute und ergänzende Gerätewerte</h3>'+attributeTableHtml(attrs)+'</div><div class="modal-section"><h3>Roh-JSON</h3><pre>'+esc(result && result.data ? JSON.stringify(result.data,null,2) : (result && result.raw ? result.raw : 'Keine Daten verfügbar'))+'</pre></div>';
+    var passed=value(d,['smart_status','passed']);
+    var modalStatusText=passed === true ? 'PASSED' : (passed === false ? 'FAILED' : 'ERKANNT');
+    modalStatus.textContent=modalStatusText;
+    modalStatus.className='badge '+(passed === true ? 'good' : (passed === false ? 'bad' : 'warn'));
+    modalBody.innerHTML='<div class="modal-section"><h3>SMART-Attribute und ergänzende Gerätewerte</h3>'+attributeTableHtml(attrs,d)+'</div><div class="modal-section"><h3>Roh-JSON</h3><pre>'+esc(result && result.data ? JSON.stringify(result.data,null,2) : (result && result.raw ? result.raw : 'Keine Daten verfügbar'))+'</pre></div>';
     modal.classList.remove('hidden');
     modalClose.focus();
   }
