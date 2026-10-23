@@ -217,7 +217,7 @@ main { max-width:1400px; margin:0 auto; padding:24px 32px 50px; }
 .toolbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:18px; }
 button { border:1px solid var(--line); border-radius:7px; color:var(--text); background:#21262d; padding:9px 14px; cursor:pointer; }
 button:hover { border-color:var(--blue); } .status { color:var(--muted); font-size:14px; }
-.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:16px; align-items:stretch; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,360px); gap:16px; align-items:stretch; justify-content:start; }
 .server-section { margin-bottom:28px; }
 .server-overview { margin-top:24px; }
 .server-heading { display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin:0 0 12px; }
@@ -226,7 +226,7 @@ button:hover { border-color:var(--blue); } .status { color:var(--muted); font-si
 .remote-form { display:flex; gap:8px; align-items:center; flex-wrap:wrap; width:100%; }
 .remote-form label { color:var(--muted); font-size:14px; }
 .remote-form input { min-width:150px; border:1px solid var(--line); border-radius:7px; background:#0b0f14; color:var(--text); padding:9px 10px; }
-.card { min-width:0; min-height:620px; display:flex; flex-direction:column; background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; cursor:pointer; transition:border-color .15s, transform .15s; }
+.card { width:360px; max-width:100%; min-width:0; min-height:620px; display:flex; flex-direction:column; background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; cursor:pointer; transition:border-color .15s, transform .15s; }
 .card:hover { border-color:var(--blue); transform:translateY(-1px); }
 .card:focus { outline:2px solid var(--blue); outline-offset:2px; }
 .card-head { padding:16px 18px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; border-bottom:1px solid var(--line); }
@@ -257,6 +257,7 @@ button:hover { border-color:var(--blue); } .status { color:var(--muted); font-si
 .empty, .error { padding:22px; border:1px dashed var(--line); border-radius:10px; color:var(--muted); } .error { color:#ffb4ae; border-color:#6e2b2b; }
 pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; background:#0b0f14; padding:12px; border-radius:6px; }
 @media(max-width:600px){ header,main{padding-left:16px;padding-right:16px;} }
+@media(max-width:400px){ .grid{grid-template-columns:minmax(0,1fr);} .card{width:100%;} }
 </style>
 </head>
 <body>
