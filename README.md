@@ -167,6 +167,28 @@ These important values are displayed directly in each disk card; the modal is us
 
 Data availability depends on the disk, controller, RAID configuration, USB adapter, virtual machine, and storage driver. A RAID controller or USB bridge may not expose all SMART information.
 
+## Multi-Server-Version 2
+
+`index_v2.php` is the multi-server variant. The original `index.php` remains unchanged.
+
+Deploy the same `index_v2.php` file on every Linux server that should be monitored, using the same URL path on each server. On the dashboard server, enter the IPv4/IPv6 address and HTTP port of another server in the `Zusätzlicher Server` field and choose `Server hinzufügen`.
+
+The V2 dashboard then:
+
+1. scans the local server
+2. sends the entered address and port to its own PHP backend via a POST request
+3. lets the backend query the remote server's `index_v2.php?api=scan` and device APIs
+4. displays the local and remote disks together, grouped by server
+
+The remote address is validated as an IP address and the port must be between 1 and 65535. The value is not written to `localStorage`, cookies, a database, or a file. It exists only in the browser's current JavaScript memory and disappears when the page is reloaded. Added remote targets are therefore lost after a reload and must be entered again.
+
+The dashboard server must be able to reach the remote server over HTTP. The remote server must have `smartctl` installed, Apache/PHP access to `/dev`, and the same `index_v2.php` available at the corresponding web path. Do not expose the endpoint publicly without firewall or authentication protection.
+
+V2 can be started locally with:
+
+```bash
+php -S 127.0.0.1:8080 index_v2.php
+```
 ## Development checks
 
 Run the PHP syntax check from the project directory:
