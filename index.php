@@ -168,7 +168,8 @@ button:hover { border-color:var(--blue); } .status { color:var(--muted); font-si
 .attribute-table th, .attribute-table td { padding:8px 10px; border:1px solid var(--line); text-align:left; vertical-align:top; }
 .attribute-table th { color:var(--muted); background:#11161d; font-weight:600; }
 .attribute-table td code { color:#c9d1d9; font-family:monospace; }
-.attribute-table tr.metric-good td { color:#b7f0bd; } .attribute-table tr.metric-warn td { color:#ffe1a1; } .attribute-table tr.metric-bad td { color:#ffb4ae; font-weight:650; }
+.attribute-table tr.metric-good td { color:var(--text); background:rgba(63,185,80,.18); } .attribute-table tr.metric-warn td { color:var(--text); background:rgba(210,153,34,.20); } .attribute-table tr.metric-bad td { color:var(--text); background:rgba(248,81,73,.20); font-weight:650; }
+.attribute-table tr.metric-good td code, .attribute-table tr.metric-warn td code, .attribute-table tr.metric-bad td code { color:var(--text); }
 .modal-section pre { margin:0; }
 .rows { padding:12px 18px 16px; } .row { display:flex; justify-content:space-between; gap:18px; border-bottom:1px solid #242b33; padding:8px 0; font-size:14px; } .row:last-child{border:0}.label{color:var(--muted)} .value{text-align:right; word-break:break-word}
 .empty, .error { padding:22px; border:1px dashed var(--line); border-radius:10px; color:var(--muted); } .error { color:#ffb4ae; border-color:#6e2b2b; }
