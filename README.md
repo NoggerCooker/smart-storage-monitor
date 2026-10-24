@@ -184,7 +184,7 @@ A summary card is always placed first in the grid. It shows the number of monito
 
 Cards use the same fixed width of 360 pixels and a minimum height of 620 pixels. On wide screens they are shown side by side; as the available width decreases, CSS automatically stacks them vertically. On very narrow screens the card uses the available viewport width to avoid horizontal scrolling. A single card therefore does not stretch across the complete screen. Each disk card header contains the originating server name and address/port so disks from different servers remain distinguishable.
 
-For NVMe devices, V2 displays `nvme_smart_health_information_log.data_units_read` and `data_units_written` directly in the card as locale-formatted counts. These are the SMART/NVMe data-unit counters returned by `smartctl` and are not silently converted to an unrelated unit.
+For NVMe devices, the separate `Data Units Read` and `Data Units Written` rows are not displayed. Instead, their values are converted into gigabytes and inserted into the common `Lifetime gelesen` and `Lifetime geschrieben` rows. The conversion uses one NVMe data unit = 512,000 bytes. SCSI devices continue to use their `gigabytes_processed` values for the same two common rows.
 
 The remote address is validated as an IP address and the port must be between 1 and 65535. The value is not written to `localStorage`, cookies, a database, or a file. It exists only in the browser's current JavaScript memory and disappears when the page is reloaded. Added remote targets are therefore lost after a reload and must be entered again.
 

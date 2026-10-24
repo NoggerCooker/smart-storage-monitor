@@ -316,10 +316,14 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
     if(v === null || v === undefined || v === '') return null;
     return String(v).replace('.', ',') + ' GB';
   }
-  function formatDataUnits(v) {
-    if(v === null || v === undefined || v === '') return null;
-    var n=numberValue(v);
-    return n === null ? String(v) : n.toLocaleString('de-DE');
+  function formatDataUnitsAsGigabytes(v) {
+    var units=numberValue(v);
+    if(units === null) return null;
+    var gigabytes=(units * 512000) / 1000000000;
+    return gigabytes.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' GB';
+  }
+  function nvmeLifetimeValue(d, key) {
+    return formatDataUnitsAsGigabytes(value(d,['nvme_smart_health_information_log',key]));
   }
   function capacityBytes(d) {
     var bytes=numberValue(value(d,['user_capacity','bytes']));
@@ -452,6 +456,8 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
     var hours=value(d,['power_on_time','hours']);
     var errorLog=value(d,['scsi_error_counter_log']);
     var endurance=enduranceUsed(d);
+    var lifetimeRead=formatGigabytes(value(errorLog,['read','gigabytes_processed'])) || nvmeLifetimeValue(d,'data_units_read');
+    var lifetimeWritten=formatGigabytes(value(errorLog,['write','gigabytes_processed'])) || nvmeLifetimeValue(d,'data_units_written');
     var rows=[
       ['SMART-Status', statusText, statusText],
       ['Hersteller', value(d,['scsi_vendor']) || value(d,['model_family']) || value(d,['device','model_family'])],
@@ -461,10 +467,8 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
       ['Schnittstelle', value(d,['device','protocol'])],
       ['Temperatur', temperature === null ? null : temperature + ' °C', temperature],
       ['Betriebsdauer', formatDays(hours)],
-      ['Lifetime gelesen', formatGigabytes(value(errorLog,['read','gigabytes_processed']))],
-      ['Lifetime geschrieben', formatGigabytes(value(errorLog,['write','gigabytes_processed']))],
-      ['Data Units Read', formatDataUnits(value(d,['nvme_smart_health_information_log','data_units_read']))],
-      ['Data Units Written', formatDataUnits(value(d,['nvme_smart_health_information_log','data_units_written']))],
+      ['Lifetime gelesen', lifetimeRead],
+      ['Lifetime geschrieben', lifetimeWritten],
       ['Power Cycles', powerCycles(d)],
       ['Nicht korrigierbare Fehler', uncorrected],
       ['Gewachsene Defektliste', grownDefects],
