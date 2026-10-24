@@ -180,7 +180,9 @@ The V2 dashboard then:
 3. lets the backend query the remote server's `index_v2.php?api=scan` and device APIs
 4. displays the local and remote disks together, in one responsive grid, grouped visually by source server in each card header
 
-Cards use the same fixed width of 360 pixels and a minimum height of 620 pixels. On wide screens they are shown side by side; as the available width decreases, CSS automatically stacks them vertically. On very narrow screens the card uses the available viewport width to avoid horizontal scrolling. A single card therefore does not stretch across the complete screen. Each card header contains the originating server name and address/port so disks from different servers remain distinguishable.
+A summary card is always placed first in the grid. It shows the number of monitored servers, total disk count, the summed capacity from `user_capacity.bytes` (or blocks × logical block size), and SMART status totals. The summary remains present even when a server has only one disk or no disk data is available.
+
+Cards use the same fixed width of 360 pixels and a minimum height of 620 pixels. On wide screens they are shown side by side; as the available width decreases, CSS automatically stacks them vertically. On very narrow screens the card uses the available viewport width to avoid horizontal scrolling. A single card therefore does not stretch across the complete screen. Each disk card header contains the originating server name and address/port so disks from different servers remain distinguishable.
 
 For NVMe devices, V2 displays `nvme_smart_health_information_log.data_units_read` and `data_units_written` directly in the card as locale-formatted counts. These are the SMART/NVMe data-unit counters returned by `smartctl` and are not silently converted to an unrelated unit.
 

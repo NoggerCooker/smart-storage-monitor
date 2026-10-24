@@ -228,6 +228,8 @@ button:hover { border-color:var(--blue); } .status { color:var(--muted); font-si
 .remote-form input { min-width:150px; border:1px solid var(--line); border-radius:7px; background:#0b0f14; color:var(--text); padding:9px 10px; }
 .card { width:360px; max-width:100%; min-width:0; min-height:620px; display:flex; flex-direction:column; background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; cursor:pointer; transition:border-color .15s, transform .15s; }
 .card:hover { border-color:var(--blue); transform:translateY(-1px); }
+.summary-card { cursor:default; }
+.summary-card:hover { transform:none; }
 .card:focus { outline:2px solid var(--blue); outline-offset:2px; }
 .card-head { padding:16px 18px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; border-bottom:1px solid var(--line); }
 .card h2 { margin:0 0 4px; font-size:17px; line-height:1.25; font-weight:650; } .device-path { color:var(--muted); font-family:monospace; font-size:13px; margin-top:4px; }
@@ -318,6 +320,20 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
     if(v === null || v === undefined || v === '') return null;
     var n=numberValue(v);
     return n === null ? String(v) : n.toLocaleString('de-DE');
+  }
+  function capacityBytes(d) {
+    var bytes=numberValue(value(d,['user_capacity','bytes']));
+    if(bytes !== null) return bytes;
+    var blocks=numberValue(value(d,['user_capacity','blocks']));
+    var blockSize=numberValue(value(d,['logical_block_size'])) || 512;
+    return blocks === null ? null : blocks * blockSize;
+  }
+  function formatCapacity(bytes) {
+    if(bytes === null || bytes === undefined) return '—';
+    if(bytes >= 1000000000000) return (bytes / 1000000000000).toFixed(2).replace('.', ',') + ' TB';
+    if(bytes >= 1000000000) return (bytes / 1000000000).toFixed(2).replace('.', ',') + ' GB';
+    if(bytes >= 1000000) return (bytes / 1000000).toFixed(1).replace('.', ',') + ' MB';
+    return Math.round(bytes).toLocaleString('de-DE') + ' B';
   }
   function enduranceUsed(d) {
     var direct=numberValue(value(d,['scsi_percentage_used_endurance_indicator']));
@@ -455,7 +471,7 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
       ['Endurance Used', endurance === null ? null : endurance + ' %', endurance],
       ['smartctl-Exitcode', result ? result.exit_code : null]
     ];
-    var html='<article class="card" tabindex="0" role="button"><div class="card-head"><div><div class="server-source">'+esc(serverName || 'Unbekannter Server')+'</div><h2>'+esc(device.device)+'</h2><div class="device-path">'+esc(device.type || 'auto')+'</div></div><span class="badge '+cls+'">'+esc(statusText)+'</span></div><div class="rows">';
+    var html='<article class="card disk-card" tabindex="0" role="button"><div class="card-head"><div><div class="server-source">'+esc(serverName || 'Unbekannter Server')+'</div><h2>'+esc(device.device)+'</h2><div class="device-path">'+esc(device.type || 'auto')+'</div></div><span class="badge '+cls+'">'+esc(statusText)+'</span></div><div class="rows">';
     rows.forEach(function(r){ html+='<div class="row '+metricClass(r[0], r.length > 2 ? r[2] : r[1], d, result)+'"><span class="label">'+esc(r[0])+'</span><span class="value">'+esc(r[1])+'</span></div>'; });
     html+='</div></article>'; return html;
   }
@@ -481,10 +497,37 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
       });
     });
   }
+  function summaryCard(servers) {
+    var disks=[];
+    servers.forEach(function(server){ server.devices.forEach(function(result){ disks.push(result); }); });
+    var totalBytes=0, capacityKnown=false, passed=0, failed=0, other=0;
+    disks.forEach(function(result){
+      var d=result && result.data ? result.data : {};
+      var bytes=capacityBytes(d);
+      if(bytes !== null){ totalBytes += bytes; capacityKnown=true; }
+      var smart=value(d,['smart_status','passed']);
+      if(smart === true) passed++; else if(smart === false) failed++; else other++;
+    });
+    var rows=[
+      ['Server', servers.length],
+      ['Datenträger', disks.length],
+      ['Gesamtspeicher', capacityKnown ? formatCapacity(totalBytes) : null],
+      ['SMART PASSED', passed],
+      ['SMART FAILED', failed],
+      ['Weitere Status', other]
+    ];
+    var html='<article class="card summary-card"><div class="card-head"><div><div class="server-source">Alle Server</div><h2>Gesamtübersicht</h2><div class="device-path">Alle erkannten Datenträger</div></div><span class="badge neutral">ÜBERSICHT</span></div><div class="rows">';
+    rows.forEach(function(row){
+      var cls=row[0]==='SMART PASSED' ? 'metric-good' : (row[0]==='SMART FAILED' && failed > 0 ? 'metric-bad' : (row[0]==='Weitere Status' && other > 0 ? 'metric-warn' : ''));
+      html+='<div class="row '+cls+'"><span class="label">'+esc(row[0])+'</span><span class="value">'+esc(row[1])+'</span></div>';
+    });
+    html+='</div></article>';
+    return html;
+  }
   function renderDashboard(servers) {
     var entries=[];
     var total=0;
-    var cards=[];
+    var cards=[summaryCard(servers)];
     servers.forEach(function(server){
       total += server.devices.length;
       server.devices.forEach(function(result){
@@ -495,7 +538,7 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
     });
     var serverNames=servers.map(function(server){ return server.name; }).join(' · ');
     content.innerHTML='<section class="server-overview"><div class="server-heading"><h2>Alle Datenträger</h2><span>'+esc(serverNames)+' · '+total+' Laufwerk(e)</span></div><div class="grid">'+(cards.length ? cards.join('') : '<div class="empty">Keine Laufwerke gefunden.</div>')+'</div></section>';
-    Array.prototype.forEach.call(content.querySelectorAll('.card'), function(el, i){
+    Array.prototype.forEach.call(content.querySelectorAll('.disk-card'), function(el, i){
       el.addEventListener('click', function(){ showModal(entries[i].device, entries[i].result); });
       el.addEventListener('keydown', function(e){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); showModal(entries[i].device, entries[i].result); } });
     });
