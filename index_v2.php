@@ -213,7 +213,7 @@ if ($api !== '') {
 body { margin:0; font-family:system-ui,-apple-system,Segoe UI,sans-serif; background:var(--bg); color:var(--text); }
 header { padding:28px 32px 20px; border-bottom:1px solid var(--line); background:#11161d; }
 h1 { margin:0 0 6px; font-size:25px; } .subtitle { color:var(--muted); }
-main { max-width:1400px; margin:0 auto; padding:24px 32px 50px; }
+main { max-width:1600px; margin:0 auto; padding:24px 32px 50px; }
 .toolbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:18px; }
 button { border:1px solid var(--line); border-radius:7px; color:var(--text); background:#21262d; padding:9px 14px; cursor:pointer; }
 button:hover { border-color:var(--blue); } .status { color:var(--muted); font-size:14px; }
