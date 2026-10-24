@@ -138,6 +138,7 @@ Der Typ sollte normalerweise nicht manuell geraten werden. Ein falscher Typ kann
 The UI displays fields when the local device exposes them through `smartctl` JSON, including:
 
 - SMART overall health status
+- disk capacity/size
 - manufacturer/vendor (`scsi_vendor` for SCSI devices, `model_family` for ATA devices)
 - model/product (`scsi_product` or `scsi_model_name` for SCSI devices)
 - serial number

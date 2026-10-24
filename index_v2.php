@@ -460,6 +460,7 @@ pre { white-space:pre-wrap; overflow:auto; max-height:360px; font-size:11px; bac
     var lifetimeWritten=formatGigabytes(value(errorLog,['write','gigabytes_processed'])) || nvmeLifetimeValue(d,'data_units_written');
     var rows=[
       ['SMART-Status', statusText, statusText],
+      ['Größe', formatCapacity(capacityBytes(d))],
       ['Hersteller', value(d,['scsi_vendor']) || value(d,['model_family']) || value(d,['device','model_family'])],
       ['Modell', value(d,['scsi_product']) || value(d,['scsi_model_name']) || value(d,['model_name']) || value(d,['device','name'])],
       ['Seriennummer', value(d,['serial_number'])],
